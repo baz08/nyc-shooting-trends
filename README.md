@@ -1,5 +1,5 @@
 # NYC Shooting Incident Trends
-
+![Death rate by borough](NYshoooting_files/figure-gfm/boro-visualization-1.png)
 An analysis of every shooting incident reported to the NYPD since 2006, examining how lethality varies across boroughs and how incidents concentrate by time of day.
 
 **Stack:** R · tidyverse · ggplot2 · R Markdown
