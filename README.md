@@ -50,7 +50,11 @@ Cleaning steps:
 ## Repo structure
 
 ```
-├── NYshoooting.Rmd    # full analysis, knits to HTML/PDF
+├── nyc-shooting/
+|   ├── NYshoooting.Rmd
+|   ├── NYshoooting.md          ← the readable report
+|   └── NYshoooting_files/
+|       └── figure-gfm/         ← your chart images (.png)
 └── README.md
 ```
 
