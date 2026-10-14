@@ -1,0 +1,163 @@
+---
+title: "Yearly NY shooting incidents"
+output:
+  github_document:
+    html_preview: false
+    df_print: kable
+  html_document: default
+date: "2024-02-20"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 8, fig.height = 5, dpi = 150)
+
+```
+```{r library-calls}
+library(lubridate)
+library(tidyverse)
+
+```
+## R Markdown
+In this markdown we explore the Dataset regarding New York shooting incidents. We begin by reading the data in as a csv file, tidy the time date format, sort and order, and filter the exact information that we wish to see,
+
+```{r cleaning}
+
+
+
+ny_cases <- read_csv("https://data.cityofnewyork.us/api/views/833y-fsy8/rows.csv?accessType=DOWNLOAD")
+
+ny <- ny_cases %>%
+  rename(DATE = 'OCCUR_DATE', TIME = 'OCCUR_TIME') %>%
+  mutate(DATE = mdy(DATE))
+
+
+ny<- ny[order(ny$BORO), ]
+
+head(ny,10)
+
+ny<- ny %>%
+  select(INCIDENT_KEY:VIC_RACE) %>%
+  mutate(death = as.numeric(ny$STATISTICAL_MURDER_FLAG), 
+                            YEAR = as.numeric(format(ny$DATE, "%Y"))) %>%
+  select(-c(LOC_CLASSFCTN_DESC, LOCATION_DESC, LOC_OF_OCCUR_DESC, JURISDICTION_CODE,
+            PERP_SEX, PERP_AGE_GROUP, PERP_RACE, PRECINCT))
+head(ny, 10)
+```
+
+Here, we have a Dataset where we have the data ordered by boro, and the deaths has been changed to a numeric format in the column "death". The year is extracted from date to the column "YEAR" and all other unnecessary variables are dropped. Following this, we continue to mutate columns to analyze the cases to death ratio and the yearly count of each. 
+
+```{r analyzing}
+
+
+
+ny<- ny %>%
+  group_by(YEAR)%>%
+  mutate(cases_per_year = n_distinct(INCIDENT_KEY))
+
+
+
+ny_by_year <- ny %>%
+  group_by(YEAR)%>%
+  reframe(death = sum(death), cases_per_year = cases_per_year)%>%
+  mutate(deaths_per_year = death, rate_death = death/ cases_per_year)%>%
+  select(deaths_per_year, YEAR, cases_per_year, rate_death)%>%
+  ungroup()
+  
+ny_by_year <- unique(ny_by_year)
+
+ny_by_year
+```
+
+
+Here we have a cleaned Dataset demonstrating the yearly count for deaths and cases, as well as the rate of death for interest's sake. The data is then visualized in the following, plotting the deaths per year. 
+
+
+```{r year-visualization}
+ny_by_year%>%
+  ggplot(aes(x= YEAR, y = rate_death)) + 
+  geom_line(aes(color= "rate_death")) + 
+  geom_point(aes(color = "rate_death")) + 
+  scale_y_log10() +
+  theme(legend.position = "bottom",
+        axis.text.x = element_text(angle = 90)) +
+   labs(title = "Deaths in New York by Year", y = NULL)
+
+```
+
+Further diving into our data, we group the information by boro to find the yearly deaths and cases per Boro.
+
+
+```{r by_boro}
+ny_by_boro <- ny %>%
+  group_by(BORO, YEAR) %>%
+  mutate(cases_per_year = n())
+
+ny_by_boro <- ny_by_boro %>%
+  group_by(BORO, YEAR) %>%
+  reframe(death = sum(death), cases_per_year = cases_per_year)%>%
+  mutate(D_per_BORO = death, rate_death = death/ cases_per_year)%>%
+  select(D_per_BORO, BORO, YEAR, cases_per_year, rate_death)%>%
+  ungroup()
+
+
+
+ny_by_boro <- unique(ny_by_boro)
+
+head(ny_by_boro, 10)
+
+```
+
+We take the cleaned data and visualize the information for the yearly death rate between boros.
+
+
+```{r Boro-visualization}
+  
+ggplot(NULL, aes(x = YEAR, y = rate_death))+
+    geom_line(data = ny_by_boro, aes(x = YEAR, y = rate_death,
+                                     color = BORO, group= BORO))+
+    geom_line(data=ny_by_year, aes(color = "AVERAGE")) +
+    scale_color_brewer(palette="Accent")+
+    scale_y_log10() +
+  theme(legend.position = "bottom",
+        axis.text.x = element_text(angle = 90)) +
+   labs(title = "Deaths per BORO", y = NULL)
+```
+```{r time}
+ny_by_hour <- ny %>%
+  ungroup() %>%
+  mutate(HOUR = as.numeric(TIME) %/% 3600) %>%
+  group_by(BORO, HOUR) %>%
+  summarise(deaths = sum(death), .groups = "drop")
+
+ggplot(ny_by_hour, aes(x = HOUR, y = deaths, color = BORO)) +
+  geom_line() +
+  scale_x_continuous(breaks = 0:23) +
+  scale_color_brewer(palette = "Accent") +
+  theme(legend.position = "bottom") +
+  labs(title = "Shooting deaths by hour of incident", x = "Hour", y = "Deaths")
+```
+
+Pictured above is the graph for the count of deaths at each time of day, visualizing the time of day with the highest deaths due to gun violence in New York.
+
+
+From the analysis we can see that the Boro does affect the death rate due to shooting incidents. For example we can see that Brooklyn has a higher rate of death on average than the whole of New York while Manhattan for a majority of the years has a lower rate of death. From our Time of Death visualization, we can also see that between the hours of 5 P.M. to 11 P.M. the number of deaths spikes. This tells us the concentration of deaths in New York. Breaking this down by borough, the same overnight pattern appears in every borough, though the boroughs with more shootings overall (such as Brooklyn and the Bronx) naturally show higher counts.
+
+Models
+```{r models}
+mod <- lm(deaths_per_year ~ cases_per_year, data = ny_by_year)
+mod
+
+ny_by_year_pred <- ny_by_year %>% mutate(pred = predict(mod))
+ny_by_year_pred
+
+ggplot(ny_by_year_pred, aes(x = cases_per_year)) +
+  geom_point(aes(y = deaths_per_year, color = "Actual")) +
+  geom_line(aes(y = pred, color = "Predicted")) +
+  labs(title = "Yearly deaths vs. victims: actual and fitted", x = "Victims per year", y = "Deaths per year")
+```
+We create a prediction model for the yearly cases and deaths in new york and visualize the model. 
+
+Bias:
+
+In this project some sources of bias that I may have had are in the lethality of guns being high and the frequency of shooting incidents within certain Boros being higher and more lethal. In this case I chose to ensure that each boro was reported equally and the reported cases were not altered in any form to reflect the bias. The yearly cases and deaths reflected the lack of lethality that I previously thought with shooting incidents and also reflected the lower frequency of incidents per year than I anticipated. Some Biases included as well besides personal may be the inability to report the incident or the lack of motivation to report incidents due to the law and fear of retaliation.
+
