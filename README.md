@@ -55,6 +55,10 @@ Cleaning steps:
 |   ├── NYshoooting.md          ← the readable report
 |   └── NYshoooting_files/
 |       └── figure-gfm/         ← chart images (.png)
+│           ├── year-visualization-1.png
+│           ├── Boro-visualization-1.png
+│           ├── time-1.png
+│           └── models-1.png
 └── README.md
 ```
 
