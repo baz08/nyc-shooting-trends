@@ -54,7 +54,7 @@ Cleaning steps:
 |   ├── NYshoooting.Rmd
 |   ├── NYshoooting.md          ← the readable report
 |   └── NYshoooting_files/
-|       └── figure-gfm/         ← your chart images (.png)
+|       └── figure-gfm/         ← chart images (.png)
 └── README.md
 ```
 
