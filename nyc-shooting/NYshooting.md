@@ -312,6 +312,12 @@ ny_by_year_pred
 </div>
 
 ``` r
+summary(mod)$r.squared
+```
+
+    ## [1] 0.8813099
+
+``` r
 ggplot(ny_by_year_pred, aes(x = cases_per_year)) +
   geom_point(aes(y = deaths_per_year, color = "Actual")) +
   geom_line(aes(y = pred, color = "Predicted")) +
