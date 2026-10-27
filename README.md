@@ -1,4 +1,5 @@
 # NYC Shooting Incident Trends
+Final project for DTSA 5510, CU Boulder MSDS.
 ![Death rate by borough](nyc-shooting/NYshooting_files/figure-gfm/Boro-visualization-1.png)
 An analysis of every shooting incident reported to the NYPD since 2006, examining how lethality varies across boroughs and how incidents concentrate by time of day.
 
